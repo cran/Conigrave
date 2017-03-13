@@ -4,13 +4,15 @@
 \alias{correlatrix}
 \title{Correlatrix}
 \usage{
-correlatrix(data, var.names, round = 3, method = "pearson", n.matrix = F,
-  name.max = 100)
+correlatrix(data, var.names, triangle = "both", round = 3,
+  method = "pearson", n.matrix = F, abbreviate = 100)
 }
 \arguments{
 \item{data}{an object of class 'data.frame' or 'imputationList'}
 
-\item{var.names}{a vector of collumn names}
+\item{var.names}{a vector of variable names}
+
+\item{triangle}{a string containing one of "lower" "upper" or "both". Indicates if correlations are to be displayed above or below the diagonal. "Both" is selected by default.}
 
 \item{round}{a numeral indicating number of decimals}
 
@@ -18,17 +20,16 @@ correlatrix(data, var.names, round = 3, method = "pearson", n.matrix = F,
 
 \item{n.matrix}{logical. If TRUE, matrix of n returned}
 
-\item{name.max}{a number indicating the maximum length of variable names}
+\item{abbreviate}{a number indicating the maximum length of variable names}
 }
 \value{
 A correlation matrix
 }
 \description{
-Takes in a data.frame or imputationList, a vector of collumn names and produces a correlation matrix
+Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix
 }
 \examples{
 carsdata<-mtcars
-correlatrix(carsdata,names(carsdata),round = 2)
+correlatrix(carsdata,names(carsdata)[1:6],round = 2)
 correlatrix(carsdata,c("mpg","cyl","disp"))
 }
-

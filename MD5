@@ -1,6 +1,6 @@
-4f2af9497484594cf28e03a687010a32 *DESCRIPTION
-5bc5cfa2d66a18afead16cf2ca3a2f26 *NAMESPACE
-0e2c63f8077a526d9e337ffe9fc9ac09 *R/Interaction.plot.R
-cce1cfe07170c70a92b59e08f09eabd2 *R/correlatrix.R
-b18ed39bbf7ac2e0c536684c7102a040 *man/correlatrix.Rd
-6e276ddf984c22b717c5a7fcbf9d6eac *man/int.plot.Rd
+68310b10856cab72d05d93c396a10555 *DESCRIPTION
+586163350489955f3267bdd031c8be0c *NAMESPACE
+59b24acfef4abd459869b8790e51f859 *R/Interaction.plot.R
+758d6a8c57ad0fe916a2d1a6e1fb857c *R/correlatrix.R
+b207704dea49e64605a1b1a3a8545aa0 *man/correlatrix.Rd
+703a82e2b8b328a852fdab381738ecbc *man/int.plot.Rd

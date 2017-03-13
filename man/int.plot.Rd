@@ -46,11 +46,10 @@ int.plot(data, outcome, predictor, moderator, y.lim = c(-1, 1),
 An interaction plot
 }
 \description{
-Calculates a two way or three way interaction and plots using ggplot2
+Calculates a standardized two way or three way interaction and plots using ggplot2
 }
 \examples{
 carsdata<-mtcars
 int.plot(carsdata,"mpg","disp","cyl", y.lim = c(-2.5,2.5))
 int.plot(carsdata,"mpg","disp", c("cyl","am"), y.lim = c(-5.0,2.0))
 }
-

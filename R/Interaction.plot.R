@@ -1,6 +1,6 @@
 #' Interaction plot
 #'
-#' Calculates a two way or three way interaction and plots using ggplot2
+#' Calculates a standardized two way or three way interaction and plots using ggplot2
 #' @param data an object of class 'data.frame' or 'imputationList'
 #' @param outcome a string with the name of the outcome variable
 #' @param predictor a string with the name of the predictor variable
@@ -24,6 +24,7 @@
 #' @export
 #' @import ggplot2
 #' @importFrom mitools MIcombine
+#' @importFrom stats cor.test lm na.omit
 #' @return An interaction plot
 
 ################################################################################
@@ -131,8 +132,7 @@ int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1,1),
                         theme(panel.grid.major=element_blank(),
                               panel.grid.minor=element_blank(),
                               panel.border=element_blank(),
-                              axis.line.x=element_line(),
-                              axis.line.y=element_line())
+                              axis.line=element_line())
 
         ##create dataset for ggplot
         colnames<-c(outcome, predictor, moderator)
