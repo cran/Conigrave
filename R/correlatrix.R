@@ -1,147 +1,234 @@
 #' Correlatrix
 #'
 #' Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix
-#' @param data an object of class 'data.frame' or 'imputationList'
-#' @param var.names a vector of variable names
+#' @param data a data.frame or imputationList.
+#' @param x a vector of variable names to correlate (optional).
+#' @param y a vector of column names for the creation of asymmetric correlation matrices.
 #' @param triangle a string containing one of "lower" "upper" or "both". Indicates if correlations are to be displayed above or below the diagonal. "Both" is selected by default.
-#' @param round a numeral indicating number of decimals
-#' @param method a string containing one of "pearson","spearman" or "kendall"
-#' @param n.matrix logical. If TRUE, matrix of n returned
-#' @param abbreviate a number indicating the maximum length of variable names
-#' @examples carsdata<-mtcars
-#' correlatrix(carsdata,names(carsdata)[1:6],round = 2)
-#' correlatrix(carsdata,c("mpg","cyl","disp"))
-#' @export
+#' @param round a numeral indicating number of decimals.
+#' @param method a string containing one of "pearson","spearman" or "kendall".
+#' @param n.matrix logical. If TRUE, matrix of n returned.
+#' @param abbreviate a number indicating the maximum length of variable names.
+#' @param stars a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was at, or smaller than, that level. The default is 0.05, 0.01 and 0.001.
+#' @param ... the argument 'var.names' from previous versions has been deprecated, please use x instead.
+#' @examples correlatrix(mtcars[,1:5])
+#' library(magrittr)
+#' mtcars %>%
+#' correlatrix(x = c("mpg","cyl","disp")
+#' ,y = c("wt","drat"),
+#' round = 2,
+#' stars = c(0.05))
+#' @export correlatrix
 #' @importFrom stats na.omit cor.test
 #' @importFrom miceadds micombine.cor
-#' @return A correlation matrix
+#' @importFrom magrittr %>%
+#' @importFrom stringdist stringdist
+#' @importFrom mitools imputationList
+#' @return A data.frame containing a correlation matrix
 
-correlatrix <- function(data, var.names, triangle = "both", round = 3, method = "pearson", n.matrix = F,
-                        abbreviate = 100){
-##check arguments
-        if(!(triangle %in% c("lower","upper","both"))){
-                stop(paste("Check help file: triangle may not be equal to", triangle))
-        }
-
-
-        specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
-
-        result.matrix<-matrix(ncol=length(var.names),nrow=length(var.names)*1)
-        result.matrix<-data.frame(result.matrix)
-
-   ###results
-        for (c in 1:length(var.names)){#collumn loop start
-                for (r in 1:length(var.names)){#row loop start{
-                        ###result
-                        if(c<r){
-                        ##get result
-                                if(class(data) == "data.frame"){
-                                cor.result<-cor.test(as.numeric(data[,var.names[c]]),as.numeric(data[,var.names[r]]),method = method)
-                                result<-cor.result$estimate
-                                p<-cor.result$p.value }
-
-                                if(class(data) == "imputationList"){
-                                        cor.result<-micombine.cor(data,c(var.names[c],var.names[r]), method = method)
-                                        result<-cor.result$r[1]
-                                        p<-cor.result$p[1]}
-
-                                result<-specify_decimal(result,round)
+correlatrix <-
+        function(data,
+                 x = NULL,
+                 y = NULL,
+                 triangle = "both",
+                 round = 3,
+                 method = "pearson",
+                 n.matrix = F,
+                 abbreviate = 100,
+                 stars = c(0.05,0.01,0.001),
+                 ...) {
+                check_names = function() {
+                        #this function checks to see if names are missing
+                        names = unique(c(x, y))
+                        if(any(c("amelia", "imputationList") %in% class(data))){
+                                name_data = data$imputations[[1]]
                         }else{
-                          result = " "
-                          p = 1
+                                name_data = data
                         }
-                        ### place result in data.frame
-                        if(triangle == "upper"){
-                                if(r<c){
 
-                                        if(class(data) == "data.frame"){
-                                                cor.result<-cor.test(as.numeric(data[,var.names[c]]),as.numeric(data[,var.names[r]]),method = method)
-                                                result<-cor.result$estimate
-                                                p<-cor.result$p.value }
+                        error_names = names[!names %in% names(name_data)]
+                        likely_names = lapply(error_names, function(e) {
+                                names(name_data)[which.min(stringdist(e, names(name_data)))]
+                        }) %>% unlist()
+                        if (length(error_names) > 0) {
+                                warning_m = paste0(
+                                        length(error_names),
+                                        " name(s) could not be found: ",
+                                        paste(error_names, collapse = ", "),
+                                        ". Did you mean: ",
+                                        paste(likely_names, collapse = ", "),
+                                        "?"
+                                )
+                                stop(warning_m, call. = F)
+                        }
+                }
+                specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
 
-                                        if(class(data) == "imputationList"){
-                                                cor.result<-micombine.cor(data,c(var.names[c],var.names[r]), method = method)
-                                                result<-cor.result$r[1]
-                                                p<-cor.result$p[1]}
+                getCor = function(data,x,y){ ##function to provide correlation results
 
-                                        result<-specify_decimal(result,round)
-                                }else{
-                                        result = " "
-                                        p = 1
+                        if(x != y){
+
+                                if(any(c("imputationList","amelia")%in%class(data))){
+                                        if(!"imputationList" %in% class(data)){
+                                                data = imputationList(data$imputations)
+                                        }
+                                        result = micombine.cor(data,c(x,y))
+                                        r = result$r[1]
+                                        p = result$p[1]
+                                } else{
+                                        result = cor.test(as.numeric(data.frame(data)[,x]), as.numeric(data.frame(data)[,y]),method = method)
+                                        r = result$estimate
+                                        p = result$p.value
                                 }
+                                r = specify_decimal(r,round)
+                                if(!is.na(p)){
+                                        r.final = r
+                                        for(s in seq_along(stars)){
+                                                if(p <= stars[s]){
+                                                        r.final = paste0(r.final,"*")
+                                                }
+                                        }
+                                        r = r.final
+                                }
+
+                        } else{
+                                r = "-"
                         }
 
-                        result.final<-result##add significance stars
+                        if (n.matrix == T){
+                                if (any(class(data) %in% c("data.frame"))) {
+                                        cor.data <- data
+                                } else{
+                                        cor.data <- data$imputations[[1]][, x]
+                                }
 
+                                r <- nrow(na.omit(cor.data[,c(x,y)]))
+                        }
 
+                        return(r)
+                } #end cor function
 
-                        if(p<0.05){
-                                result.final<-paste(result,"*",sep="")}
-                        if(p<0.01){
-                                result.final<-paste(result,"**",sep="")}
-                        if(p<0.001){
-                                result.final<-paste(result,"***",sep="")}
+                if ("var.names" %in% names(list(...))) {
+                        x = list(...)$var.names
+                        warning("var.names is deprecated. Please use x instead.",
+                                call. = F)
+                }
+                extra_args = names(list(...))
+                extra_args = extra_args[extra_args != "var.names"]
+                if(length(extra_args) > 0){
+                        warning(paste0("unused argument(s): "),
+                                paste0(extra_args,collapse = ", "), call. = F)
+                }
 
-                        if(n.matrix == T){
-                                        if(class(data) == "data.frame"){
-                                                cor.data<- data[,var.names]
-                                        }else{
-                                                cor.data<-data$imputations[[1]][,var.names]
+                if(is.null(x)){
+                        if(any(c("imputationList","amelia") %in% class(data))){
+                                x = names(data$imputations[[1]])
+                        }else{
+                        x = names(data)
+                        }
+                }
+                if(is.null(y)){ #if y is not set, it just equals x and defaults to a standard correlatrix
+                        y = x
+                }
+
+                check_names()
+
+                ##check arguments
+                if (!(triangle %in% c("lower", "upper", "both"))) {
+                        stop(paste(
+                                "Check help file: triangle may not be equal to",
+                                triangle
+                        ))
+                }
+
+                matrix = data.frame(matrix(ncol = length(x),nrow=length(y)))#create empty results matrix
+                row.names(matrix) = abbreviate(y,abbreviate) #label it
+                names(matrix) = abbreviate(x,abbreviate) #...
+
+                warn = c()
+                for(r in seq_along(y)){#for every column
+                        for(c in seq_along(x)){ #and every row
+
+                                matrix[r,c]=tryCatch({
+                                        getCor(data,x[c],y[r])
+                                },warning=function(w) {
+                                        withCallingHandlers(suppressWarnings({
+                                                warn <<- append(warn, conditionMessage(w))
+                                                return(getCor(data,x[c],y[r]))
+                                        }))
+
+                                })
+
+                                }
+
+                }
+
+                if(identical(x,y)){ #only allow triangle settings if x == y
+
+                        if(triangle == "upper"){ #if triangle upper is selected
+                                for(c in seq_along(y)){
+                                        for(r in seq_along(x)){
+                                                if(r>c){ #when rows are larger than columns
+                                                        matrix[r,c] = "" #delete the results
+                                                }
+
                                         }
 
-                        result.final <- length(na.omit(cor.data[,var.names[c]][is.na(cor.data[,var.names[r]])==F]))
-                        }
-
-                if(triangle == "lower"){
-                        if(c<r){
-                        result.matrix[r,c]<-result.final
-                        }
-                        if(c>r){
-                                result.matrix[r,c]<-" "
-                        }
-                        names(result.matrix)<-1:length(var.names)
-                        for(r in seq_along(var.names)){
-                                row.names(result.matrix)[r] <- paste(r,".",abbreviate(var.names[r],abbreviate), sep = "")
                                 }
 
                         }
 
-                if(triangle == "upper"){
-                        if(c>r){
-                                result.matrix[r,c]<-result.final
+                        if(triangle == "lower"){# do the reverse if triangle lower is selected
+                                for(c in seq_along(y)){
+                                        for(r in seq_along(x)){
+                                                if(r<c){
+                                                        matrix[r,c] = ""
+                                                }
+
+                                        }
+
+                                }
+
                         }
-                        if(c<r){
-                                result.matrix[r,c]<-" "
+
+                        if(triangle != "both"){ #if triangle both is selected
+                                names(matrix) = 1:length(y) #if symmetrical get rid of col names
+                                rownames(matrix) = paste(1:length(x),".",x,sep="") #put numbers in front of row.names
                         }
-                        names(result.matrix)<-1:length(var.names)
-                        for(r in seq_along(var.names)){
-                                row.names(result.matrix)[r] <- paste(r,".",abbreviate(var.names[r],abbreviate), sep = "")
+                } else{
+                        if (triangle != "both"){
+                                warning("triangle settings only work when x is identical to y",call. = F)
                         }
                 }
 
-                if(triangle == "both"){
-                        if(c<r){
-                                result.matrix[r,c]<-result.final
-                                result.matrix[c,r]<-result.final
+
+                if (n.matrix == T) {
+                        message("matrix of n returned.")
+                } else{
+                        lapply(seq_along(stars), function(s){
+                                paste0("signif at ",stars[s],paste(rep("*",s),collapse = ""))
+                        }) %>%
+                                unlist() %>%
+                                paste(collapse = "; ") %>%
+                                message()
+
+                        if(length(warn) > 0){
+
+                                ties = which(warn == "Cannot compute exact p-value with ties")
+                                sd_zero = which(warn == "the standard deviation is zero")
+                                if(length(ties > 0)){
+                                warning(paste0(length(ties)," correlations were affected by ties. For those correlations, exact p-values cannot be computed."),call.=F)
+                                }
+                                if(length(sd_zero>0)){
+                                warning(paste0(length(sd_zero)," correlations could not be calculated as they involved a variable which had no variance."),call. = F)
+                                }
+                                exclude = unique(c(ties,sd_zero))
+                                lapply(warn[-exclude],function(x){
+                                       warning(x,call.=F)
+                                       })
                         }
-                        ###collumn and row names
-                        names(result.matrix) <- as.vector(lapply(var.names, function(x) abbreviate(x,abbreviate)))
-                        row.names(result.matrix) <- as.vector(lapply(var.names, function(x) abbreviate(x,abbreviate)))
+
                 }
-
-
-                        #leave diagonal blank
-                        for(b in 1:length(var.names)){
-                                result.matrix[b,b]<-"-"
-                        }#diagonal loop end
-                }#row loop end
-        }#collumn loop end
-
-        if(n.matrix == T){
-        message("n.matrix == T, therefore matrix of n returned.")
-                }else{
-        message("signif at 0.05*; signif at 0.01**; signif at 0.001***")
-                }
-        return(result.matrix)
-}
+                return(matrix)
+        }
 

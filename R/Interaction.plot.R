@@ -16,14 +16,14 @@
 #' @param colour a character string containing the colour of the data points
 #' @param show.points logical to determine whether or not to include points
 #' @param save logical as to whether or not to save the plot
-#' @param path string containing path of where to save plot
+#' @param path string containing path of where to save plot. Defaults to working directory.
 
 #' @examples carsdata<-mtcars
 #' int.plot(carsdata,"mpg","disp","cyl", y.lim = c(-2.5,2.5))
 #' int.plot(carsdata,"mpg","disp", c("cyl","am"), y.lim = c(-5.0,2.0))
 #' @export
 #' @import ggplot2
-#' @importFrom mitools MIcombine
+#' @importFrom mitools MIcombine imputationList
 #' @importFrom stats cor.test lm na.omit
 #' @return An interaction plot
 
@@ -31,12 +31,16 @@
 int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1,1),
                      x.lim=c(-1,1), x.lab = "auto", y.lab = "auto",title = "auto",
                      title.size = 15, SDs = 1,legend.name = "auto", colour = "ghostwhite",
-                     show.points = FALSE, save = F, path = "default" ){
+                     show.points = FALSE, save = F, path = getwd() ){
 ################################################################################
 
 ###############
 ###INTERACTION SUMMARIES
  ###2 way interaction
+        if(class(data) == "amelia"){
+                data = imputationList(data$imputations)
+        }
+
   if(length(moderator) == 1){
   #### standard data
   if("data.frame" %in% class(data) == T ){
@@ -255,7 +259,7 @@ temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
 
         if(save == T){
           save<- paste(outcome,"~",predictor,"x",moderator[1],".jpg", sep ="")
-          if(path == "default"){
+          if(path == "desktop"){
           username<-Sys.getenv("USERNAME")
           path <- paste("C:/Users/",username,"/Desktop/",sep = "")
           }

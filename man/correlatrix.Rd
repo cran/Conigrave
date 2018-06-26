@@ -4,32 +4,43 @@
 \alias{correlatrix}
 \title{Correlatrix}
 \usage{
-correlatrix(data, var.names, triangle = "both", round = 3,
-  method = "pearson", n.matrix = F, abbreviate = 100)
+correlatrix(data, x = NULL, y = NULL, triangle = "both", round = 3,
+  method = "pearson", n.matrix = F, abbreviate = 100, stars = c(0.05,
+  0.01, 0.001), ...)
 }
 \arguments{
-\item{data}{an object of class 'data.frame' or 'imputationList'}
+\item{data}{a data.frame or imputationList.}
 
-\item{var.names}{a vector of variable names}
+\item{x}{a vector of variable names to correlate (optional).}
+
+\item{y}{a vector of column names for the creation of asymmetric correlation matrices.}
 
 \item{triangle}{a string containing one of "lower" "upper" or "both". Indicates if correlations are to be displayed above or below the diagonal. "Both" is selected by default.}
 
-\item{round}{a numeral indicating number of decimals}
+\item{round}{a numeral indicating number of decimals.}
 
-\item{method}{a string containing one of "pearson","spearman" or "kendall"}
+\item{method}{a string containing one of "pearson","spearman" or "kendall".}
 
-\item{n.matrix}{logical. If TRUE, matrix of n returned}
+\item{n.matrix}{logical. If TRUE, matrix of n returned.}
 
-\item{abbreviate}{a number indicating the maximum length of variable names}
+\item{abbreviate}{a number indicating the maximum length of variable names.}
+
+\item{stars}{a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was at, or smaller than, that level. The default is 0.05, 0.01 and 0.001.}
+
+\item{...}{the argument 'var.names' from previous versions has been deprecated, please use x instead.}
 }
 \value{
-A correlation matrix
+A data.frame containing a correlation matrix
 }
 \description{
 Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix
 }
 \examples{
-carsdata<-mtcars
-correlatrix(carsdata,names(carsdata)[1:6],round = 2)
-correlatrix(carsdata,c("mpg","cyl","disp"))
+correlatrix(mtcars[,1:5])
+library(magrittr)
+mtcars \%>\%
+correlatrix(x = c("mpg","cyl","disp")
+,y = c("wt","drat"),
+round = 2,
+stars = c(0.05))
 }

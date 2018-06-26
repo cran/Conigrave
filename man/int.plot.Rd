@@ -7,7 +7,7 @@
 int.plot(data, outcome, predictor, moderator, y.lim = c(-1, 1),
   x.lim = c(-1, 1), x.lab = "auto", y.lab = "auto", title = "auto",
   title.size = 15, SDs = 1, legend.name = "auto", colour = "ghostwhite",
-  show.points = FALSE, save = F, path = "default")
+  show.points = FALSE, save = F, path = getwd())
 }
 \arguments{
 \item{data}{an object of class 'data.frame' or 'imputationList'}
@@ -40,7 +40,7 @@ int.plot(data, outcome, predictor, moderator, y.lim = c(-1, 1),
 
 \item{save}{logical as to whether or not to save the plot}
 
-\item{path}{string containing path of where to save plot}
+\item{path}{string containing path of where to save plot. Defaults to working directory.}
 }
 \value{
 An interaction plot
