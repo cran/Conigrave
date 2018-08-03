@@ -1,6 +1,6 @@
 #' Correlatrix
 #'
-#' Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix
+#' Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
 #' @param data a data.frame or imputationList.
 #' @param x a vector of variable names to correlate (optional).
 #' @param y a vector of column names for the creation of asymmetric correlation matrices.
@@ -22,9 +22,8 @@
 #' @importFrom stats na.omit cor.test
 #' @importFrom miceadds micombine.cor
 #' @importFrom magrittr %>%
-#' @importFrom stringdist stringdist
 #' @importFrom mitools imputationList
-#' @return A data.frame containing a correlation matrix
+#' @return A data.frame containing a correlation matrix.
 
 correlatrix <-
         function(data,
@@ -37,31 +36,7 @@ correlatrix <-
                  abbreviate = 100,
                  stars = c(0.05,0.01,0.001),
                  ...) {
-                check_names = function() {
-                        #this function checks to see if names are missing
-                        names = unique(c(x, y))
-                        if(any(c("amelia", "imputationList") %in% class(data))){
-                                name_data = data$imputations[[1]]
-                        }else{
-                                name_data = data
-                        }
 
-                        error_names = names[!names %in% names(name_data)]
-                        likely_names = lapply(error_names, function(e) {
-                                names(name_data)[which.min(stringdist(e, names(name_data)))]
-                        }) %>% unlist()
-                        if (length(error_names) > 0) {
-                                warning_m = paste0(
-                                        length(error_names),
-                                        " name(s) could not be found: ",
-                                        paste(error_names, collapse = ", "),
-                                        ". Did you mean: ",
-                                        paste(likely_names, collapse = ", "),
-                                        "?"
-                                )
-                                stop(warning_m, call. = F)
-                        }
-                }
                 specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
 
                 getCor = function(data,x,y){ ##function to provide correlation results
@@ -131,7 +106,7 @@ correlatrix <-
                         y = x
                 }
 
-                check_names()
+                check_names(x = c(x,y), data = data)
 
                 ##check arguments
                 if (!(triangle %in% c("lower", "upper", "both"))) {

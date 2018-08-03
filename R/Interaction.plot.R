@@ -1,21 +1,21 @@
 #' Interaction plot
 #'
-#' Calculates a standardized two way or three way interaction and plots using ggplot2
-#' @param data an object of class 'data.frame' or 'imputationList'
-#' @param outcome a string with the name of the outcome variable
-#' @param predictor a string with the name of the predictor variable
-#' @param moderator a vector of the names of up to two moderating variables
-#' @param y.lim vector of numerals indicating y axis bounds
-#' @param x.lim vector of numerals indicating x axis bounds
-#' @param x.lab a string with the label of the x axis
-#' @param y.lab a string with the label of the y axis
-#' @param title a string containing title text
-#' @param title.size a numeral containing the font size of the title
-#' @param SDs a numeral indicating the standard deviations of the moderators
-#' @param legend.name a character string indicating the title of the legend
-#' @param colour a character string containing the colour of the data points
-#' @param show.points logical to determine whether or not to include points
-#' @param save logical as to whether or not to save the plot
+#' Calculates a standardized two way or three way interaction and plots using ggplot2.
+#' @param data an object of class 'data.frame' or 'imputationList'.
+#' @param outcome a string with the name of the outcome variable.
+#' @param predictor a string with the name of the predictor variable.
+#' @param moderator a vector of the names of up to two moderating variables.
+#' @param y.lim vector of numerals indicating y axis bounds.
+#' @param x.lim vector of numerals indicating x axis bounds.
+#' @param x.lab a string with the label of the x axis.
+#' @param y.lab a string with the label of the y axis.
+#' @param title a string containing title text.
+#' @param title.size a numeral containing the font size of the title.
+#' @param SDs a numeral indicating the standard deviations of the moderators.
+#' @param legend.name a character string indicating the title of the legend.
+#' @param colour a character string containing the colour of the data points.
+#' @param show.points logical to determine whether or not to include points.
+#' @param save logical as to whether or not to save the plot.
 #' @param path string containing path of where to save plot. Defaults to working directory.
 
 #' @examples carsdata<-mtcars
@@ -25,15 +25,17 @@
 #' @import ggplot2
 #' @importFrom mitools MIcombine imputationList
 #' @importFrom stats cor.test lm na.omit
-#' @return An interaction plot
+#' @return A ggplot
 
 ################################################################################
 int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1,1),
                      x.lim=c(-1,1), x.lab = "auto", y.lab = "auto",title = "auto",
                      title.size = 15, SDs = 1,legend.name = "auto", colour = "ghostwhite",
-                     show.points = FALSE, save = F, path = getwd() ){
+                     show.points = FALSE, save = F, path = getwd()){
 ################################################################################
+#TODO make output a list with summary and plot.
 
+check_names(c(outcome,predictor,moderator),data = data)
 ###############
 ###INTERACTION SUMMARIES
  ###2 way interaction
@@ -131,12 +133,6 @@ int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1,1),
 
 
 
-        ###interaction plot theme
-        simpletheme<-   theme_bw()+
-                        theme(panel.grid.major=element_blank(),
-                              panel.grid.minor=element_blank(),
-                              panel.border=element_blank(),
-                              axis.line=element_line())
 
         ##create dataset for ggplot
         colnames<-c(outcome, predictor, moderator)
@@ -206,7 +202,7 @@ temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
           scale_y_continuous(limits = y.lim) +
           labs(x = x.lab, y = y.lab)+
           scale_size_continuous(name=moderator, guide = "none") +
-          ggtitle(title)+ simpletheme +
+          ggtitle(title)+ theme_classic() +
           theme(plot.title = element_text(size = title.size, face = "bold"))
 
 
@@ -253,7 +249,6 @@ temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
             geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) - as.numeric(INT$coefficients[2]*SDs) - as.numeric(INT$coefficients[3]*SDs) + as.numeric(INT$coefficients[5]*SDs*SDs)),
                             slope=(as.numeric(INT$coefficients[4]) - as.numeric(INT$coefficients[6]*SDs) - as.numeric(INT$coefficients[7]*SDs) + as.numeric(INT$coefficients[8]*SDs*SDs)),
                             linetype= "mod1low.mod2low" ), size = 1 )
-
 
         }
 

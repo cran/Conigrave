@@ -17,11 +17,8 @@ get.numeric = function(x) {
                 imps = lapply(x$imputations, function(y) {
                         cols = unlist(lapply(y, is.numeric))
                         return(y[, cols])
-
                 })
                 return(imputationList(imps))
 
         }
-
-
 }

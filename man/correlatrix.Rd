@@ -5,8 +5,8 @@
 \title{Correlatrix}
 \usage{
 correlatrix(data, x = NULL, y = NULL, triangle = "both", round = 3,
-  method = "pearson", n.matrix = F, abbreviate = 100, stars = c(0.05,
-  0.01, 0.001), ...)
+  method = "pearson", n.matrix = F, abbreviate = 100,
+  stars = c(0.05, 0.01, 0.001), ...)
 }
 \arguments{
 \item{data}{a data.frame or imputationList.}
@@ -30,10 +30,10 @@ correlatrix(data, x = NULL, y = NULL, triangle = "both", round = 3,
 \item{...}{the argument 'var.names' from previous versions has been deprecated, please use x instead.}
 }
 \value{
-A data.frame containing a correlation matrix
+A data.frame containing a correlation matrix.
 }
 \description{
-Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix
+Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
 }
 \examples{
 correlatrix(mtcars[,1:5])

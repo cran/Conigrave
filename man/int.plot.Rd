@@ -6,47 +6,48 @@
 \usage{
 int.plot(data, outcome, predictor, moderator, y.lim = c(-1, 1),
   x.lim = c(-1, 1), x.lab = "auto", y.lab = "auto", title = "auto",
-  title.size = 15, SDs = 1, legend.name = "auto", colour = "ghostwhite",
-  show.points = FALSE, save = F, path = getwd())
+  title.size = 15, SDs = 1, legend.name = "auto",
+  colour = "ghostwhite", show.points = FALSE, save = F,
+  path = getwd())
 }
 \arguments{
-\item{data}{an object of class 'data.frame' or 'imputationList'}
+\item{data}{an object of class 'data.frame' or 'imputationList'.}
 
-\item{outcome}{a string with the name of the outcome variable}
+\item{outcome}{a string with the name of the outcome variable.}
 
-\item{predictor}{a string with the name of the predictor variable}
+\item{predictor}{a string with the name of the predictor variable.}
 
-\item{moderator}{a vector of the names of up to two moderating variables}
+\item{moderator}{a vector of the names of up to two moderating variables.}
 
-\item{y.lim}{vector of numerals indicating y axis bounds}
+\item{y.lim}{vector of numerals indicating y axis bounds.}
 
-\item{x.lim}{vector of numerals indicating x axis bounds}
+\item{x.lim}{vector of numerals indicating x axis bounds.}
 
-\item{x.lab}{a string with the label of the x axis}
+\item{x.lab}{a string with the label of the x axis.}
 
-\item{y.lab}{a string with the label of the y axis}
+\item{y.lab}{a string with the label of the y axis.}
 
-\item{title}{a string containing title text}
+\item{title}{a string containing title text.}
 
-\item{title.size}{a numeral containing the font size of the title}
+\item{title.size}{a numeral containing the font size of the title.}
 
-\item{SDs}{a numeral indicating the standard deviations of the moderators}
+\item{SDs}{a numeral indicating the standard deviations of the moderators.}
 
-\item{legend.name}{a character string indicating the title of the legend}
+\item{legend.name}{a character string indicating the title of the legend.}
 
-\item{colour}{a character string containing the colour of the data points}
+\item{colour}{a character string containing the colour of the data points.}
 
-\item{show.points}{logical to determine whether or not to include points}
+\item{show.points}{logical to determine whether or not to include points.}
 
-\item{save}{logical as to whether or not to save the plot}
+\item{save}{logical as to whether or not to save the plot.}
 
 \item{path}{string containing path of where to save plot. Defaults to working directory.}
 }
 \value{
-An interaction plot
+A ggplot
 }
 \description{
-Calculates a standardized two way or three way interaction and plots using ggplot2
+Calculates a standardized two way or three way interaction and plots using ggplot2.
 }
 \examples{
 carsdata<-mtcars
