@@ -7,13 +7,13 @@
 check_names(x, data)
 }
 \arguments{
-\item{x}{a vector of names.}
+\item{x}{a vector of colnames.}
 
 \item{data}{a data.frame or imputationList.}
 }
 \value{
-check_names will trigger an error if the supplied vector of names are not found in the supplied object. It will also predict which names the user was trying to spell.
+check_names will trigger an error if the supplied vector of names were not found in the supplied object. It will also predict which names the user was trying to spell.
 }
 \description{
-Takes in a vector of colnames, and a data.frame or imputationList. This funciton will trigger an error if names are not in the data object. In addition, this name will try to predict which names they were trying to spell.
+Takes in a vector of colnames, and a data.frame or imputationList. This function will trigger an error if names are not in the data object. In addition, this function will try to predict which names the user was trying to spell.
 }

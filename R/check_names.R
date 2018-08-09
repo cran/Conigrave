@@ -1,11 +1,12 @@
 #' check_names
 #'
-#' Takes in a vector of colnames, and a data.frame or imputationList. This funciton will trigger an error if names are not in the data object. In addition, this name will try to predict which names they were trying to spell.
-#' @param x a vector of names.
+#' Takes in a vector of colnames, and a data.frame or imputationList. This function will trigger an error if names are not in the data object. In addition, this function will try to predict which names the user was trying to spell.
+#' @param x a vector of colnames.
 #' @param data a data.frame or imputationList.
+#' @return check_names will trigger an error if the supplied vector of names were not found in the supplied object. It will also predict which names the user was trying to spell.
+#' @export check_names
 #' @importFrom stringdist stringdist
 #' @importFrom magrittr %>%
-#' @return check_names will trigger an error if the supplied vector of names are not found in the supplied object. It will also predict which names the user was trying to spell.
 
 check_names = function(x, data) {
   #this function checks to see if names are missing

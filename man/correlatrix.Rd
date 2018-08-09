@@ -6,7 +6,7 @@
 \usage{
 correlatrix(data, x = NULL, y = NULL, triangle = "both", round = 3,
   method = "pearson", n.matrix = F, abbreviate = 100,
-  stars = c(0.05, 0.01, 0.001), ...)
+  stars = c(0.05, 0.01, 0.001), partial = c(), ...)
 }
 \arguments{
 \item{data}{a data.frame or imputationList.}
@@ -26,6 +26,8 @@ correlatrix(data, x = NULL, y = NULL, triangle = "both", round = 3,
 \item{abbreviate}{a number indicating the maximum length of variable names.}
 
 \item{stars}{a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was at, or smaller than, that level. The default is 0.05, 0.01 and 0.001.}
+
+\item{partial}{a vector of colnames. If supplied the function will output a matrix of partial correlations. All effects will be controlled for by the variables in this vector.}
 
 \item{...}{the argument 'var.names' from previous versions has been deprecated, please use x instead.}
 }
