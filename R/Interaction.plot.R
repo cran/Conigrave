@@ -17,11 +17,10 @@
 #' @param show.points logical to determine whether or not to include points.
 #' @param save logical as to whether or not to save the plot.
 #' @param path string containing path of where to save plot. Defaults to working directory.
-
 #' @examples carsdata<-mtcars
 #' int.plot(carsdata,"mpg","disp","cyl", y.lim = c(-2.5,2.5))
 #' int.plot(carsdata,"mpg","disp", c("cyl","am"), y.lim = c(-5.0,2.0))
-#' @export
+#' @export int.plot
 #' @import ggplot2
 #' @importFrom mitools MIcombine imputationList
 #' @importFrom stats cor.test lm na.omit
@@ -55,7 +54,7 @@ check_names(c(outcome,predictor,moderator),data = data)
   names(INT$coefficients)[4]<-paste("scale(",moderator,")","*",
                                        "scale(",predictor,")", sep = "")
 
-  print(summary(INT))
+  #print(summary(INT))
   }
   ####IF multiple imputation
   if(class(data) == "imputationList"){
@@ -99,7 +98,7 @@ check_names(c(outcome,predictor,moderator),data = data)
       names(INT$coefficients)[8]<-paste("scale(",moderator[1],")","*",
                                         "scale(",moderator[2],")","*",
                                         "scale(",predictor,")", sep = "")
-      print(summary(INT))
+      #print(summary(INT))
     }
 
     ####IF mi.imputation
@@ -253,7 +252,7 @@ temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
         }
 
         if(save == T){
-          save<- paste(outcome,"~",predictor,"x",moderator[1],".jpg", sep ="")
+          save<- paste(outcome,"~",predictor,"x",moderator[1],".png", sep ="")
           if(path == "desktop"){
           username<-Sys.getenv("USERNAME")
           path <- paste("C:/Users/",username,"/Desktop/",sep = "")
@@ -264,6 +263,6 @@ temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
           message(path)
         }
 
-        return(temp.plot)
+        return(list(plot = temp.plot, summary = summary(INT)))
 }
 ################################################################################

@@ -3,6 +3,8 @@
 export(autoModel)
 export(check_names)
 export(correlatrix)
+export(ctrx)
+export(find_similar)
 export(get.numeric)
 export(int.plot)
 import(ggplot2)

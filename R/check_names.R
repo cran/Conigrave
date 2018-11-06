@@ -16,12 +16,19 @@ check_names = function(x, data) {
   } else{
     name_data = data
   }
-  error_names = names[!names %in% names(name_data)]
+  
+  if(!class(data) == "character"){
+    name_data = names(name_data)
+  } else{
+    name_data = data
+  }
+  
+  error_names = names[!names %in% name_data]
   likely_names = lapply(error_names, function(e) {
-          distances = stringdist(e,names(name_data))
+          distances = stringdist(e,name_data)
           likely_location = which.min(distances)
-          if(distances[likely_location] < 4){
-                names(name_data)[likely_location]
+          if(distances[likely_location] < (4 + nchar(e))){
+                name_data[likely_location]
           }else{
                   NA
           }
