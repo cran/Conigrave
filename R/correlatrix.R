@@ -1,6 +1,6 @@
 #' Correlatrix
 #'
-#' Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
+#' Takes in a dat#'a.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
 #' @aliases correlatrix
 #' @param data a data.frame or imputationList.
 #' @param x a vector of variable names to correlate (optional).
@@ -10,13 +10,13 @@
 #' @param method a string containing one of "pearson","spearman" or "kendall".
 #' @param n.matrix logical. If TRUE, matrix of n returned.
 #' @param abbreviate a number indicating the maximum length of variable names.
-#' @param stars a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was at, or smaller than, that level. The default is 0.05, 0.01 and 0.001.
+#' @param stars a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was smaller than, that level. The default is 0.05, 0.01 and 0.001.
 #' @param partial a vector of colnames. If supplied the function will output a matrix of partial correlations. All effects will be controlled for by the variables in this vector.
 #' @param describe a list of functions with names or a logical. If functions are supplied to describe, a new column will be appended to the final data.frame for each argument in the list. If TRUE is supplied, means and standard deviation is appended with na.rm = T.
 #' @param leading.zero a logical. If FALSE, leading zeros are removed.
 #' @param ... the argument 'var.names' from previous versions has been deprecated, please use x instead.
 #' @examples correlatrix(mtcars[,1:5])
-#' library(magrittr)
+#' library(dplyr)
 #' mtcars %>%
 #' ctrx(x = c("mpg","cyl","disp")
 #' ,y = c("wt","drat"),
@@ -27,7 +27,7 @@
 #' @export ctrx
 #' @importFrom stats na.omit cor.test
 #' @importFrom miceadds micombine.cor
-#' @importFrom magrittr %>%
+#' @importFrom dplyr %>%
 #' @importFrom mitools imputationList
 #' @importFrom ppcor pcor.test
 #' @return A data.frame containing a correlation matrix.
@@ -131,7 +131,7 @@ ctrx =
         if (!is.na(p) & n.matrix == F) {
           r.final = r
           for (s in seq_along(stars)) {
-            if (p <= stars[s]) {
+            if (p < stars[s]) {
               r.final = paste0(r.final,
                                "*")
             }
@@ -277,12 +277,12 @@ ctrx =
     
     
     if (n.matrix == T) {
-      message("matrix of n returned.")
+
     } else{
       lapply(seq_along(stars), function(s) {
-        paste0("signif at ",
+        paste0("p < ",
                stars[s],
-               paste(rep("*", s), collapse = ""))
+               paste(rep(" *", s), collapse = ""))
       }) %>%
         unlist() %>%
         paste(collapse = "; ") %>%

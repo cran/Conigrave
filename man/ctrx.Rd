@@ -27,7 +27,7 @@ ctrx(data, x = NULL, y = NULL, triangle = "both", round = 2,
 
 \item{abbreviate}{a number indicating the maximum length of variable names.}
 
-\item{stars}{a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was at, or smaller than, that level. The default is 0.05, 0.01 and 0.001.}
+\item{stars}{a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was smaller than, that level. The default is 0.05, 0.01 and 0.001.}
 
 \item{partial}{a vector of colnames. If supplied the function will output a matrix of partial correlations. All effects will be controlled for by the variables in this vector.}
 
@@ -41,11 +41,11 @@ ctrx(data, x = NULL, y = NULL, triangle = "both", round = 2,
 A data.frame containing a correlation matrix.
 }
 \description{
-Takes in a data.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
+Takes in a dat#'a.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
 }
 \examples{
 correlatrix(mtcars[,1:5])
-library(magrittr)
+library(dplyr)
 mtcars \%>\%
 ctrx(x = c("mpg","cyl","disp")
 ,y = c("wt","drat"),

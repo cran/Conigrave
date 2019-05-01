@@ -14,7 +14,7 @@
 #' @examples autoModel(mtcars,"mpg",set.seed = 2)
 #' @export autoModel
 #' @importFrom mitools MIcombine imputationList
-#' @importFrom magrittr %>%
+#' @importFrom dplyr %>%
 #' @importFrom dplyr as_tibble arrange desc
 #' @importFrom stats runif
 #' @importFrom utils capture.output txtProgressBar setTxtProgressBar

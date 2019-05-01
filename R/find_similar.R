@@ -7,7 +7,7 @@
 #' @return a vector containing strings from y, which are similar to those in x.
 #' @export find_similar
 #' @importFrom stringdist stringdist
-#' @importFrom magrittr %>%
+#' @importFrom dplyr %>%
 
 find_similar = function(x, y, percent = 50){
   results = lapply(x, function(i) {

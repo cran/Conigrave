@@ -6,10 +6,9 @@
 #' @return check_names will trigger an error if the supplied vector of names were not found in the supplied object. It will also predict which names the user was trying to spell.
 #' @export check_names
 #' @importFrom stringdist stringdist
-#' @importFrom magrittr %>%
+#' @importFrom dplyr %>%
 
 check_names = function(x, data) {
-  #this function checks to see if names are missing
   names = unique(x)
   if (any(c("amelia", "imputationList") %in% class(data))) {
     name_data = data$imputations[[1]]
@@ -17,7 +16,7 @@ check_names = function(x, data) {
     name_data = data
   }
   
-  if(!class(data) == "character"){
+  if(!"character" %in% class(data)){
     name_data = names(name_data)
   } else{
     name_data = data
