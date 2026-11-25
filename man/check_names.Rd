@@ -2,18 +2,28 @@
 % Please edit documentation in R/check_names.R
 \name{check_names}
 \alias{check_names}
-\title{check_names}
+\title{Check that requested column names exist}
 \usage{
 check_names(x, data)
 }
 \arguments{
-\item{x}{a vector of colnames.}
+\item{x}{Character vector of requested names.}
 
-\item{data}{a data.frame or imputationList.}
+\item{data}{A data frame, imputation list, Amelia object, or character
+vector of available names.}
 }
 \value{
-check_names will trigger an error if the supplied vector of names were not found in the supplied object. It will also predict which names the user was trying to spell.
+Invisibly returns \code{NULL} if all names exist. Otherwise,
+  raises an error listing the missing names.
 }
 \description{
-Takes in a vector of colnames, and a data.frame or imputationList. This function will trigger an error if names are not in the data object. In addition, this function will try to predict which names the user was trying to spell.
+Check a data frame, each completed data set, or a supplied vector of
+available names. Suggest similar names by Levenshtein edit distance
+when a requested name is missing.
+}
+\examples{
+check_names(c("mpg", "wt"), mtcars)
+}
+\seealso{
+\code{\link{find_similar}}
 }

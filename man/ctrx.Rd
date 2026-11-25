@@ -3,53 +3,97 @@
 \name{ctrx}
 \alias{ctrx}
 \alias{correlatrix}
-\title{Correlatrix}
+\title{Build correlation tables}
 \usage{
-ctrx(data, x = NULL, y = NULL, triangle = "both", round = 2,
-  method = "pearson", n.matrix = F, abbreviate = 100,
-  stars = c(0.05, 0.01, 0.001), partial = c(), describe = F,
-  leading.zero = T, ...)
+ctrx(
+  data,
+  x = NULL,
+  y = NULL,
+  triangle = "both",
+  round = 2,
+  method = "pearson",
+  n.matrix = FALSE,
+  abbreviate = 100,
+  stars = c(0.05, 0.01, 0.001),
+  partial = c(),
+  describe = FALSE,
+  leading.zero = TRUE,
+  ...,
+  output = c("table", "long")
+)
 }
 \arguments{
-\item{data}{a data.frame or imputationList.}
+\item{data}{A data frame or completed data sets in an imputation list
+or Amelia object. Selected columns must be numeric vectors.}
 
-\item{x}{a vector of variable names to correlate (optional).}
+\item{x}{Column names for the table's horizontal axis. Defaults to all columns.}
 
-\item{y}{a vector of column names for the creation of asymmetric correlation matrices.}
+\item{y}{Column names for the vertical axis. Defaults to \code{x}.}
 
-\item{triangle}{a string containing one of "lower" "upper" or "both". Indicates if correlations are to be displayed above or below the diagonal. "Both" is selected by default.}
+\item{triangle}{\code{"both"}, \code{"lower"}, or \code{"upper"}. The
+triangular layouts require identical \code{x} and \code{y}.}
 
-\item{round}{a numeral indicating number of decimals.}
+\item{round}{Number of decimal places in formatted output.}
 
-\item{method}{a string containing one of "pearson","spearman" or "kendall".}
+\item{method}{One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"}.}
 
-\item{n.matrix}{logical. If TRUE, matrix of n returned.}
+\item{n.matrix}{If \code{TRUE}, show complete-pair counts instead of
+correlations in the formatted table. A count is \code{NA} if it
+differs across imputations.}
 
-\item{abbreviate}{a number indicating the maximum length of variable names.}
+\item{abbreviate}{Minimum label length passed to \code{base::abbreviate()}.}
 
-\item{stars}{a numeric vector. For each numeral, a star will be assigned which indicates that the p-value for a given correlation was smaller than, that level. The default is 0.05, 0.01 and 0.001.}
+\item{stars}{P-value thresholds. Each threshold strictly greater than the
+p-value adds one star. Use \code{NULL}
+to omit stars.}
 
-\item{partial}{a vector of colnames. If supplied the function will output a matrix of partial correlations. All effects will be controlled for by the variables in this vector.}
+\item{partial}{Numeric control variables, identified by column name.
+They are removed from the table axes, and observations must be complete
+on both variables and all controls. Partial correlations are not
+supported across multiple imputations.}
 
-\item{describe}{a list of functions with names or a logical. If functions are supplied to describe, a new column will be appended to the final data.frame for each argument in the list. If TRUE is supplied, means and standard deviation is appended with na.rm = T.}
+\item{describe}{\code{FALSE}, \code{TRUE} for mean and standard deviation
+(with missing values removed), or a named list of functions that each
+return one numeric value. Adds columns for the row variables.
+For imputed data, each descriptive statistic is averaged across imputations.}
 
-\item{leading.zero}{a logical. If FALSE, leading zeros are removed.}
+\item{leading.zero}{If \code{FALSE}, omit leading zeros in formatted correlations.}
 
-\item{...}{the argument 'var.names' from previous versions has been deprecated, please use x instead.}
+\item{...}{\code{var.names} is accepted for compatibility but is deprecated.
+Use \code{x} instead.}
+
+\item{output}{\code{"table"} for formatted output, or \code{"long"} for
+one unrounded result per distinct off-diagonal pair. With \code{"long"},
+the axis and triangle selections still apply, but formatting and
+descriptive columns are not used. Counts are included regardless of
+\code{n.matrix}.}
 }
 \value{
-A data.frame containing a correlation matrix.
+A data frame. Formatted output places \code{y} on the rows and
+  \code{x} on the columns, or uses a triangular layout. Long output has
+  columns \code{x}, \code{y}, \code{estimate}, \code{p.value}, and \code{n}.
+  Pairs are not repeated in reverse order.
 }
 \description{
-Takes in a dat#'a.frame or imputationList, a vector of variable names and produces a correlation matrix with customizable significance stars.
+Calculate Pearson, Spearman, or Kendall correlations for numeric columns.
+Return a formatted table or use \code{output = "long"} for unrounded
+statistics suitable for further analysis. \code{correlatrix()} is an
+alias for \code{ctrx()}.
+}
+\details{
+For ordinary Pearson correlations, pairs with fewer than three
+  complete observations have missing estimates. Constant variables or too
+  few complete observations for the chosen test give missing statistics
+  for that pair without dropping other pairs. With multiple imputations,
+  estimates require the optional miceadds package and are pooled using \code{miceadds::micombine.cor()}.
+  Partial estimates require ppcor. Count-only tables need neither package.
 }
 \examples{
-correlatrix(mtcars[,1:5])
-library(dplyr)
-mtcars \%>\%
-ctrx(x = c("mpg","cyl","disp")
-,y = c("wt","drat"),
-round = 2,
-stars = c(0.05),
-describe = list("mean" = function(x) mean(x,na.rm=TRUE)))
+vars <- c("mpg", "wt", "hp")
+ctrx(mtcars, x = vars, triangle = "lower", describe = TRUE)
+ctrx(mtcars, x = "mpg", y = c("wt", "hp"), method = "spearman", n.matrix = TRUE)
+ctrx(mtcars, x = vars, output = "long")
+}
+\seealso{
+\code{\link{get.numeric}}
 }

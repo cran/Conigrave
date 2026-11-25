@@ -2,20 +2,32 @@
 % Please edit documentation in R/find_similar.R
 \name{find_similar}
 \alias{find_similar}
-\title{find_similar}
+\title{Match strings by minimum similarity}
 \usage{
 find_similar(x, y, percent = 50)
 }
 \arguments{
-\item{x}{a vector of strings.}
+\item{x}{Character vector of query strings.}
 
-\item{y}{a vector of strings. Strings will be returned from y which are similar to those in x}
+\item{y}{Character vector of possible matches.}
 
-\item{percent}{a numeric. Strings in y will be returned if they are at least this percent similar. Defaults to 50\%.}
+\item{percent}{Minimum similarity, from 0 to 100. Use 100 for exact
+matches. The default is 50.}
 }
 \value{
-a vector containing strings from y, which are similar to those in x.
+A sorted character vector of unique matches, or \code{character(0)}
+  if none match.
 }
 \description{
-Takes in two vectors of strings. This function will return strings in the second set, which are similar to those in the first.
+Find strings in \code{y} that are at least \code{percent} similar to
+any string in \code{x}.
+}
+\details{
+Similarity is 100 times one minus the Levenshtein edit distance
+  divided by the longer string length. Swapping two adjacent letters
+  counts as two edits. Two empty strings match exactly. Missing strings
+  are ignored.
+}
+\examples{
+find_similar("colour", c("color", "colour", "shape"), percent = 80)
 }

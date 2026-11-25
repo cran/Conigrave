@@ -2,52 +2,169 @@
 % Please edit documentation in R/Automodel.R
 \name{autoModel}
 \alias{autoModel}
-\title{autoModel}
+\title{Search for a parsimonious regression model}
 \usage{
-autoModel(data, outcome, genepool = NULL, extinction = 30,
-  children = 20, penalty = 0.03, samples = 5, include = c(),
-  exclude = c(), set.seed = NULL)
+autoModel(
+  data,
+  outcome,
+  genepool = NULL,
+  extinction = 30,
+  children = 20,
+  penalty = 0.03,
+  samples = 5,
+  include = c(),
+  exclude = c(),
+  set.seed = NULL,
+  family = NULL,
+  fit = NULL,
+  score = NULL,
+  max_evaluations = 1000L,
+  max_order = 3L,
+  validation = NULL,
+  validation_score = NULL
+)
 }
 \arguments{
-\item{data}{a data.frame or imputationList.}
+\item{data}{A data frame, a \code{mitools::imputationList()}, or an Amelia
+object. Completed data sets must have the same rows in the same order,
+with matching row names, column types, and factor levels.}
 
-\item{outcome}{the colname of the dependent variable.}
+\item{outcome}{Name of the response column.}
 
-\item{genepool}{a vector. The genepool is the vector of variables names which shall be used to generate models. If not set, the genepool defaults to all variables in the supplied dataset other than the outcome variable.}
+\item{genepool}{Character vector of eligible predictors. By default, use
+all columns except the outcome and any excluded predictors.}
 
-\item{extinction}{a numeric. The algorithm will stop when no improvement has been made for this number of generations.}
+\item{extinction}{Stop after this many generations without improvement.}
 
-\item{children}{a numeric. The number of models to test in each generation.}
+\item{children}{Number of candidate proposals per generation.}
 
-\item{penalty}{a numeric. Model fitness will be reduced by this number for each regression coefficient. This results in a handicap for overly complicated models.}
+\item{penalty}{Non-negative cost per non-intercept coefficient. A term
+that adds more than one coefficient incurs the cost for each one.}
 
-\item{samples}{a numeric. The number of sub-samples in which to test stability of r-squared.}
+\item{samples}{Number of bootstrap resamples for stability. Use zero to skip.}
 
-\item{include}{a vector of colnames which must be included as predictors in each model.}
+\item{include}{Required predictors or comma-separated interactions. For
+example, \code{include = "x,z"} requires \code{x}, \code{z}, and \code{x:z}.
+Required names must be eligible and cannot also be excluded.}
 
-\item{exclude}{a vector of colnames to be removed from the genepool.}
+\item{exclude}{Character vector of predictor names to omit from the search.}
 
-\item{set.seed}{a numeric. If this argument is provided, the algorithm will use the given seed in order to present reproducible results.}
+\item{set.seed}{Optional search seed. If supplied, the caller's random-number
+state is restored on exit.}
+
+\item{family}{A GLM family object, such as \code{stats::binomial()} or
+\code{stats::poisson()}. Use \code{NULL} for ordinary linear regression,
+or leave it unset when supplying a custom fitter.}
+
+\item{fit}{Optional deterministic function \code{function(formula, data)}.
+Supply it with \code{score}, not \code{family}. Its fitted object needs
+\code{coef()} (returning a numeric vector) and \code{summary()} methods,
+and a \code{vcov()} method for pooling across imputations.}
+
+\item{score}{For a custom fit, a function of the fitted model that returns
+one finite number to maximize, for example negative AIC.}
+
+\item{max_evaluations}{Maximum number of distinct training candidates
+attempted, including failed fits. Fitting the winner again and running
+optional stability calculations are additional.}
+
+\item{max_order}{Maximum interaction order, including for required terms.
+Use one to search only main effects.}
+
+\item{validation}{Optional independent data with the outcome and all
+eligible predictors. Supply a single frame, reused for each fit, or one
+completed data set per fit. These data do not influence model selection.}
+
+\item{validation_score}{Optional function \code{function(fitted_model, newdata)}
+returning one numeric held-out score. Required when validating a custom
+fitter. \code{newdata} is transformed using the training means and scales.}
 }
 \value{
-A list containing a tibble with all the best models the algorithm found, the summary results of the best model, and a plot tracking the algorithms' performance.
+An object of class \code{autoModel}, stored as a list. Its main
+  components are listed below. Print the object for a compact report, or
+  use \code{summary()} for coefficient estimates and bootstrap stability.
+  \describe{
+    \item{\code{formula}, \code{coefficients}}{The selected formula and
+      coefficient estimates (pooled across imputations). Use \code{formula()}
+      and \code{coef()} to extract them.}
+    \item{\code{history}}{One row per strict improvement in chronological
+      order; the last row is the winner. Columns are \code{generation}
+      (zero for initial candidates), \code{formula} (text),
+      \code{n_coefficients} (excluding the intercept), \code{score}
+      (unpenalized), \code{fitness} (penalized), and \code{stability}.}
+    \item{\code{diagnostics}}{Counts of distinct training candidates
+      \code{attempted}, \code{succeeded}, and \code{failed}, the number of
+      search \code{generations} after initialization, and \code{stop_reason}:
+      \code{"complete"} (all zero- or one-predictor candidates considered),
+      \code{"budget"} (evaluation limit), or \code{"stagnation"} (no
+      improvement for \code{extinction} generations). Counts exclude
+      bootstrap, validation, and the final fit.}
+    \item{\code{result_history}}{A tibble of improving candidates, best first.
+      \code{call} is the model formula, \code{length} counts non-intercept
+      coefficients, and \code{fitness} includes the penalty. The unpenalized
+      score is \code{R2} (adjusted R-squared) for built-in linear models and
+      \code{score} otherwise. \code{stability} is the optional bootstrap summary.}
+    \item{\code{result}}{The winning fit summary, or the pooled coefficient
+      summary for multiple imputations. Coefficients refer to the modeling
+      scales, which include standardized numeric predictors.}
+    \item{\code{fits}, \code{transforms}}{One fitted model and table of
+      training centers and scales per completed data set. Use
+      \code{\link{predict.autoModel}} with raw data rather than applying
+      these transformations yourself.}
+    \item{\code{plot}}{A plot of improving candidates' penalized training
+      scores by search generation.}
+    \item{\code{evaluations}, \code{metric}, \code{validation_score}}{The
+      number of attempted training candidates, the training metric name,
+      and the mean held-out score (\code{NULL} if no validation was requested).}
+  }
 }
 \description{
-autoModel uses a genetic algorithm to optimize regression models for increased explained variance. Overly complicated models are penalized for adding additional regression terms in order to combat over-fitting.
+Search predictor sets and hierarchical interactions, retaining candidates
+that improve the fit score after subtracting a complexity penalty.
+Supports linear regression, generalized linear models, and custom fitters.
 }
 \details{
-'autoModel' is a genetic algorithm which mutates regression models (predicting a specified outcome) in order to maximize r-squared (the explained variance).\cr \cr
-The algorithm tests models at random. In each generation, it produces 'children' using the current best model as a seed. Each child of the previous winner will, on average, lose and gain a predictor. In each child, predictors have a smaller chance to gain or lose an interaction term.
-Over successive generations selecting seeds with larger r-squares causes a drift towards models which explain more variance.\cr\cr
-Without intervention this algorithm generates very complicated models, e.g. 15 way interactions, in which all variance is explained.
-These overly-complicated models are almost certainly useless for explaining phenomenon outside of the training dataset.
-Generally, these models do no more than describe the exact configuration of the dataset in which they evolved.
-In order to deal with this situation, models are penalized for every predictor. This means that increased complexity will not be preferred unless it contributes substantially to the model's r-squared.\cr \cr
-When the algorithm has failed to improve model fitness over many successive generations, it stops and returns the best model.
-It also presents the history of all previous winners. The algorithm tests the stability of each of these winners on multiple sub-samples (75\% of rows with replacement).
-Stability is equal to 1, minus the standard deviation of the r-squares in each sub sample, divided by the r-square statistic of the model in question.
-Stability can range from 1 to negative values (if the standard deviation of sub-sample r-squares was larger than the model's r-squared).
+\strong{Search and scoring.} Every candidate uses the same complete rows
+across the outcome, eligible predictors, and all imputations. Numeric
+predictors are standardized within each completed data set. Factors are
+kept as factors even if their labels look numeric. Only the built-in
+linear model standardizes the response.
+
+The search averages adjusted R-squared (linear models), the fraction of
+null deviance explained (GLMs), or the supplied custom score across
+imputations. Fitness is this score minus the penalty times the number of
+non-intercept coefficients. If nothing is required, the search starts with
+an intercept-only candidate. That candidate counts toward the budget and
+can win. The search is heuristic; it does not guarantee an exhaustive
+search or the best possible model.
+
+\strong{Validation and stability.} The default held-out score is one
+minus the ratio of prediction loss to the loss from predicting the
+training response mean. Loss is squared error for linear models and
+family deviance for GLMs. The result can be negative. With multiple
+imputations, this is a mean of per-fit scores, not a score for the mean
+prediction. Training scores are not estimates of predictive accuracy.
+
+Stability is one minus the bootstrap standard deviation of the training
+score divided by the absolute full-data score. Each replicate samples
+row indices with replacement and uses the same indices for every
+imputation. A zero full-data score or an undefined calculation gives
+\code{NA}. Stability is not held-out performance.
 }
 \examples{
-autoModel(mtcars,"mpg",set.seed = 2)
+\dontrun{
+# Run manually: the search repeatedly fits regression models.
+autoModel(mtcars, "mpg", set.seed = 10, children = 3)
+
+m <- autoModel(
+  mtcars, "am", genepool = c("wt", "hp"),
+  include = "wt,hp", family = binomial(),
+  max_evaluations = 8, samples = 0, set.seed = 11
+)
+predict(m, newdata = data.frame(wt = 3.5, hp = 150))
+int.plot(m, predictor = "wt", moderator = "hp")$plot
+}
+}
+\seealso{
+\code{\link{autoModel-methods}}, \code{\link{predict.autoModel}}, \code{\link{int.plot}}
 }

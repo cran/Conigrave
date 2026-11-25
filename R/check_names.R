@@ -1,56 +1,35 @@
-#' check_names
+#' Check that requested column names exist
 #'
-#' Takes in a vector of colnames, and a data.frame or imputationList. This function will trigger an error if names are not in the data object. In addition, this function will try to predict which names the user was trying to spell.
-#' @param x a vector of colnames.
-#' @param data a data.frame or imputationList.
-#' @return check_names will trigger an error if the supplied vector of names were not found in the supplied object. It will also predict which names the user was trying to spell.
-#' @export check_names
-#' @importFrom stringdist stringdist
-#' @importFrom dplyr %>%
+#' Check a data frame, each completed data set, or a supplied vector of
+#' available names. Suggest similar names by Levenshtein edit distance
+#' when a requested name is missing.
+#'
+#' @param x Character vector of requested names.
+#' @param data A data frame, imputation list, Amelia object, or character
+#'   vector of available names.
+#' @return Invisibly returns \code{NULL} if all names exist. Otherwise,
+#'   raises an error listing the missing names.
+#' @seealso \code{\link{find_similar}}
+#' @examples
+#' check_names(c("mpg", "wt"), mtcars)
+#' @export
 
-check_names = function(x, data) {
-  names = unique(x)
-  if (any(c("amelia", "imputationList") %in% class(data))) {
-    name_data = data$imputations[[1]]
-  } else{
-    name_data = data
+check_names <- function(x, data) {
+  if (is_imputed(data)) {
+    for (d in data_frames(data)) check_names(x, names(d))
+    return(invisible(NULL))
   }
-  
-  if(!"character" %in% class(data)){
-    name_data = names(name_data)
-  } else{
-    name_data = data
-  }
-  
-  error_names = names[!names %in% name_data]
-  likely_names = lapply(error_names, function(e) {
-          distances = stringdist(e,name_data)
-          likely_location = which.min(distances)
-          if(distances[likely_location] < (4 + nchar(e))){
-                name_data[likely_location]
-          }else{
-                  NA
-          }
-  }) %>% unlist()
-  if (length(error_names) > 0) {
-          if(length(error_names)==1){
-                  stem = "name"
-          } else{
-                  stem = "names"
-          }
-
-
-    warning_m = paste0(
-      length(error_names),
-        " ",stem," could not be found: ",
-        paste(error_names, collapse = ", "),".")
-      if(length(na.omit(likely_names))>0){
-             warning_m = paste0(warning_m, " Did you mean: ",
-                                paste(likely_names, collapse = ", "),
-                                "?")
-      }
-
-
-    stop(warning_m, call. = F)
-  }
+  available <- if (is.character(data)) data else as.character(names(data))
+  missing <- setdiff(x, available)
+  if (!length(missing)) return(invisible(NULL))
+  msg <- paste0(length(missing), if (length(missing) == 1L) " name" else " names",
+                " could not be found: ", paste(missing, collapse = ", "), ".")
+  guesses <- vapply(missing, function(s) {
+    distance <- utils::adist(s, available)[1L, ]
+    j <- which.min(distance)
+    if (length(j) && distance[j] < 4 + nchar(s)) available[j] else NA_character_
+  }, character(1))
+  guesses <- unique(guesses[!is.na(guesses)])
+  if (length(guesses)) msg <- paste0(msg, " Did you mean: ", paste(guesses, collapse = ", "), "?")
+  stop(msg, call. = FALSE)
 }

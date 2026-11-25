@@ -2,16 +2,25 @@
 % Please edit documentation in R/get.numeric.R
 \name{get.numeric}
 \alias{get.numeric}
-\title{get.numeric}
+\title{Keep numeric columns}
 \usage{
 get.numeric(x)
 }
 \arguments{
-\item{x}{a data.frame or 'imputationList'}
+\item{x}{A data frame, imputation list, or Amelia object.}
 }
 \value{
-Returns the original object with all non-numeric columns removed.
+A data frame for ordinary input, or an imputation list for
+  imputed input. For imputed input, the retained column names and
+  their order must agree across completed data sets.
 }
 \description{
-Takes in a data.frame or imputationList, removes non-numeric columns, and returns the object.
+Remove non-numeric columns from a data frame or from each completed
+data set. A single numeric column is kept as a data frame, not a vector.
+}
+\examples{
+get.numeric(iris)
+}
+\seealso{
+\code{\link{ctrx}}
 }

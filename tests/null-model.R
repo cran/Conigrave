@@ -1,0 +1,5 @@
+library(Conigrave)
+m <- autoModel(mtcars, "mpg", c("wt", "hp"), penalty = 100, samples = 0, set.seed = 1)
+stopifnot(m$result_history$length[1] == 0, abs(m$result_history$fitness[1]) < 1e-10)
+forced <- autoModel(mtcars, "mpg", "wt", include = "wt", penalty = 100, samples = 0)
+stopifnot(forced$result_history$length[1] == 1L)

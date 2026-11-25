@@ -1,268 +1,166 @@
-#' Interaction plot
+#' Plot a two-way or three-way interaction
 #'
-#' Calculates a standardized two way or three way interaction and plots using ggplot2.
-#' @param data an object of class 'data.frame' or 'imputationList'.
-#' @param outcome a string with the name of the outcome variable.
-#' @param predictor a string with the name of the predictor variable.
-#' @param moderator a vector of the names of up to two moderating variables.
-#' @param y.lim vector of numerals indicating y axis bounds.
-#' @param x.lim vector of numerals indicating x axis bounds.
-#' @param x.lab a string with the label of the x axis.
-#' @param y.lab a string with the label of the y axis.
-#' @param title a string containing title text.
-#' @param title.size a numeral containing the font size of the title.
-#' @param SDs a numeral indicating the standard deviations of the moderators.
-#' @param legend.name a character string indicating the title of the legend.
-#' @param colour a character string containing the colour of the data points.
-#' @param show.points logical to determine whether or not to include points.
-#' @param save logical as to whether or not to save the plot.
-#' @param path string containing path of where to save plot. Defaults to working directory.
-#' @examples carsdata<-mtcars
-#' int.plot(carsdata,"mpg","disp","cyl", y.lim = c(-2.5,2.5))
-#' int.plot(carsdata,"mpg","disp", c("cyl","am"), y.lim = c(-5.0,2.0))
-#' @export int.plot
-#' @import ggplot2
-#' @importFrom mitools MIcombine imputationList
-#' @importFrom stats cor.test lm na.omit
-#' @return A ggplot
+#' Fit a standardized linear interaction from data, or plot predictions
+#' from an existing model without refitting it.
+#'
+#' @param data A data frame, completed data sets in an imputation list or
+#'   Amelia object, or a fitted \code{autoModel}, \code{lm}, or \code{glm}.
+#' @param outcome Name of the response column. Required when supplying data.
+#'   Inferred from the fitted model if omitted.
+#' @param predictor Name of the numeric predictor on the horizontal axis.
+#' @param moderator One or two moderator names. With raw data, moderators
+#'   must be numeric. With an existing fit, they can also be categorical.
+#' @param y.lim Vertical axis limits. Defaults to \code{c(-1, 1)} for
+#'   the standardized data mode and is inferred from predictions for fits.
+#' @param x.lim Horizontal axis limits. Defaults to \code{c(-1, 1)} for
+#'   the standardized data mode. With a fit and no \code{newdata}, supplied
+#'   limits also determine the range of the prediction grid.
+#' @param x.lab,y.lab Axis labels. Use \code{"auto"} for the variable names.
+#' @param title Plot title. Use \code{"auto"} for a title based on the variables.
+#' @param title.size Plot title size.
+#' @param SDs Number of standard deviations below and above the mean at
+#'   which to draw lines for numeric moderators when no grid is supplied.
+#' @param legend.name Legend title. Use \code{"auto"} for the moderator names.
+#' @param colour High end of the colour gradient for observed points.
+#' @param show.points If \code{TRUE}, add observed points from the first
+#'   completed data set. Only supported when supplying data rather than a fit.
+#' @param newdata Optional prediction grid for an existing fit. Supply
+#'   one row per prediction and all required predictors on their input scales.
+#'   A grid is useful for transformed formulas or custom covariate values.
+#'
+#' @details With data, \code{int.plot()} standardizes the outcome, predictor,
+#'   and moderators within each completed data set before fitting a linear
+#'   interaction. Both axes are in standard-deviation units.
+#'
+#' With a fit, the axes use the predictor input scale and model response
+#' scale. For an \code{autoModel}, the function uses the stored training
+#' transformations, so supply raw predictor values. Without an explicit
+#' grid, the numeric predictor ranges from one SD below to one SD above
+#' its mean (unless \code{x.lim} is supplied). Lines use numeric moderator
+#' values at the mean plus or minus \code{SDs} standard deviations; with one
+#' numeric moderator, a line is also drawn at its mean. Categorical
+#' moderators use all levels. Other predictors are held at their mean or
+#' first level. For imputed fits, these defaults come from the first completed
+#' data set, and plotted predictions are averaged across fits.
+#'
+#' An existing model is used as-is. The plot does not add an interaction term
+#' or test whether an interaction is present.
+#'
+#' To save a figure, pass the returned plot to
+#' \code{ggplot2::ggsave("interaction.png", plot = result$plot)}.
+#'
+#' @return A list with \code{plot} (a ggplot) and \code{summary} (the model
+#'   summary). When supplying a fit, \code{predictions} contains the
+#'   plotting grid with an added \code{.prediction} column.
+#' @seealso \code{\link{autoModel}}, \code{\link{predict.autoModel}}
+#' @examples
+#' int.plot(mtcars, "mpg", "disp", "cyl", y.lim = c(-2.5, 2.5))$plot
+#'
+#' fit <- glm(am ~ wt * hp, data = mtcars, family = binomial())
+#' int.plot(fit, predictor = "wt", moderator = "hp")$plot
+#' @export
 
-################################################################################
-int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1,1),
-                     x.lim=c(-1,1), x.lab = "auto", y.lab = "auto",title = "auto",
-                     title.size = 15, SDs = 1,legend.name = "auto", colour = "ghostwhite",
-                     show.points = FALSE, save = F, path = getwd()){
-################################################################################
-#TODO make output a list with summary and plot.
-
-check_names(c(outcome,predictor,moderator),data = data)
-###############
-###INTERACTION SUMMARIES
- ###2 way interaction
-        if(class(data) == "amelia"){
-                data = imputationList(data$imputations)
-        }
-
-  if(length(moderator) == 1){
-  #### standard data
-  if("data.frame" %in% class(data) == T ){
-  data<-as.data.frame(data)
-        INT <- lm(scale(data[,outcome]) ~
-                          scale(data[,moderator])*scale(data[,predictor]))
-
-  names(INT$coefficients)[2]<-paste("scale(",moderator,")", sep = "")
-  names(INT$coefficients)[3]<-paste("scale(",predictor,")", sep = "")
-  names(INT$coefficients)[4]<-paste("scale(",moderator,")","*",
-                                       "scale(",predictor,")", sep = "")
-
-  #print(summary(INT))
+int.plot <- function(data, outcome, predictor, moderator, y.lim = c(-1, 1),
+                     x.lim = c(-1, 1), x.lab = "auto", y.lab = "auto", title = "auto",
+                     title.size = 15, SDs = 1, legend.name = "auto", colour = "ghostwhite",
+                     show.points = FALSE, newdata = NULL) {
+  from_fit <- inherits(data, c("autoModel", "lm"))
+  if (from_fit && missing(outcome))
+    outcome <- if (inherits(data, "autoModel")) data$outcome else all.vars(stats::formula(data)[[2L]])[1L]
+  if (length(outcome) != 1L || length(predictor) != 1L ||
+      !length(moderator) %in% 1:2 || anyDuplicated(c(outcome, predictor, moderator)))
+    stop("Supply a distinct outcome, predictor and one or two moderators.")
+  if (from_fit) {
+    if (show.points) stop("Observed points require a data frame, not a fitted model.")
+    if (missing(y.lim)) y.lim <- NULL
+    if (missing(x.lim)) x.lim <- NULL
+    fitted_grid <- interaction_predictions(data, predictor, moderator, newdata, x.lim, SDs)
+    lines <- fitted_grid$lines
+    model_summary <- if (inherits(data, "autoModel")) data$result else summary(data)
+  } else {
+    if (!is.null(newdata)) stop("newdata requires a fitted model.")
+    cols <- c(outcome, predictor, moderator)
+    frames <- select_frames(data_frames(data), cols, numeric_only = TRUE)
+    frames <- lapply(frames, function(d) { d[] <- lapply(d, standardize); d })
+    formula <- model_formula(outcome, list(c(moderator, predictor)))
+    fits <- lapply(frames, function(d) stats::lm(formula, data = d))
+    levels <- if (length(moderator) == 1L) c(-1, 0, 1) else c(-1, 1)
+    settings <- expand.grid(rep(list(levels), length(moderator)))
+    names(settings) <- moderator
+    labels <- if (length(moderator) == 1L) c(paste0("-", SDs, "SD"), "Mean", paste0("+", SDs, "SD"))
+      else apply(settings, 1, function(z) paste(moderator, ifelse(z > 0, "high", "low"), collapse = "; "))
+    grid <- settings[rep(seq_len(nrow(settings)), each = 2), , drop = FALSE] * SDs
+    grid[[predictor]] <- rep(x.lim, nrow(settings))
+    estimates <- lapply(fits, stats::predict, newdata = grid)
+    lines <- data.frame(xvalue = grid[[predictor]], yvalue = Reduce("+", estimates) / length(fits),
+                        group = factor(rep(labels, each = 2), levels = labels))
+    fit <- if (length(fits) == 1L) fits[[1]] else mitools::MIcombine(fits)
+    model_summary <- summary(fit)
   }
-  ####IF multiple imputation
-  if(class(data) == "imputationList"){
-      result.list<-list()
-      for(i in seq_along(data[[1]])){
-        result.list[[paste("imp",i,sep="")]] <- lm(scale(data$imputations[[i]][,outcome])~
-                                                     scale(data$imputations[[i]][,moderator]) *
-                                                     scale(data$imputations[[i]][,predictor]))
-      }
-
-      result <- MIcombine(result.list)
-      names(result$coefficients)[2]<-paste("scale(",moderator,")", sep = "")
-      names(result$coefficients)[3]<-paste("scale(",predictor,")", sep = "")
-      names(result$coefficients)[4]<-paste("scale(",moderator,")","*",
-                                           "scale(",predictor,")", sep = "")
-      INT<-result
-
-      }
-
-        sum.int<-(summary(INT))
+  xvalue <- yvalue <- group <- intensity <- NULL
+  p <- ggplot2::ggplot()
+  if (show.points) {
+    d <- frames[[1]]
+    pts <- data.frame(xvalue = d[[predictor]], yvalue = d[[outcome]], intensity = d[[moderator[1]]])
+    p <- p + ggplot2::geom_jitter(ggplot2::aes(xvalue, yvalue, colour = intensity), data = pts,
+                                  width = 0.025, height = 0) +
+      ggplot2::scale_colour_gradient(low = "black", high = colour, guide = "none")
   }
-
- #######################
- ###3 way interaction
-  if(length(moderator) == 2) {
-
-    if("data.frame" %in% class(data) == T ){
-      data<-as.data.frame(data)
-      INT <- lm(scale(data[,outcome]) ~
-                  scale(data[,moderator[1]])*scale(data[,moderator[2]])*scale(data[,predictor]))
-
-      names(INT$coefficients)[2]<-paste("scale(",moderator[1],")", sep = "")
-      names(INT$coefficients)[3]<-paste("scale(",moderator[2],")", sep = "")
-      names(INT$coefficients)[4]<-paste("scale(",predictor,")", sep = "")
-      names(INT$coefficients)[5]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",moderator[2],")", sep = "")
-      names(INT$coefficients)[6]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",predictor,")", sep = "")
-      names(INT$coefficients)[7]<-paste("scale(",moderator[2],")","*",
-                                        "scale(",predictor,")", sep = "")
-      names(INT$coefficients)[8]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",moderator[2],")","*",
-                                        "scale(",predictor,")", sep = "")
-      #print(summary(INT))
-    }
-
-    ####IF mi.imputation
-    if(class(data) == "imputationList"){
-      result.list<-list()
-      for(i in seq_along(data[[1]])){
-        result.list[[paste("imp",i,sep="")]] <- lm(scale(data$imputations[[i]][,outcome])~
-                                                     scale(data$imputations[[i]][,moderator[1]]) * scale(data$imputations[[i]][,moderator[2]])*
-                                                     scale(data$imputations[[i]][,predictor]))
-      }
-
-      INT <- MIcombine(result.list)
-      names(INT$coefficients)[2]<-paste("scale(",moderator[1],")", sep = "")
-      names(INT$coefficients)[3]<-paste("scale(",moderator[2],")", sep = "")
-      names(INT$coefficients)[4]<-paste("scale(",predictor,")", sep = "")
-      names(INT$coefficients)[5]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",moderator[2],")", sep = "")
-      names(INT$coefficients)[6]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",predictor,")", sep = "")
-      names(INT$coefficients)[7]<-paste("scale(",moderator[2],")","*",
-                                        "scale(",predictor,")", sep = "")
-      names(INT$coefficients)[8]<-paste("scale(",moderator[1],")","*",
-                                        "scale(",moderator[2],")","*",
-                                        "scale(",predictor,")", sep = "")
-
-      summary(INT)
-
-    }
-
-  }
-
-
-
-
-        ##create dataset for ggplot
-        colnames<-c(outcome, predictor, moderator)
-        if(class(data) == "data.frame"){
-        int.data<-cbind(data[,outcome], data[,predictor],data[,moderator])
-        int.data<-as.data.frame(int.data)
-        colnames(int.data)<-c("outcome","predictor","moderator")
-        }else{
-          int.data<-cbind(data$imputations[[1]][,outcome], data$imputations[[1]][,predictor],data$imputations[[1]][,moderator])
-          int.data<-as.data.frame(int.data)
-          colnames(int.data)<-c("outcome","predictor","moderator")
-        }
-        ######plot
-temp.plot<-ggplot(int.data, aes(x = scale(predictor), y = scale(outcome),
-                colour = scale(moderator)))
-
-        ##add points if set to true
-                if(show.points ==T){
-                        temp.plot<-temp.plot +
-                                geom_jitter(aes(size = scale(moderator)),width = 0.025) +
-                           scale_color_gradient(limits = c(-2,2),low = "black", high = colour, guide= "none")
-                }
-
-                #linetypes
-                if(length(moderator == 1)){
-                positive<- paste("+",SDs,"SD",sep="")
-                negative<- paste("-",SDs,"SD",sep="")
-                }
-                if(length(moderator == 2)){
-                  mod1high.mod2high<- paste(substr(moderator[1],start = 1, stop = 4)," high","; ",substr(moderator[2],start = 1, stop = 4)," high",sep="")
-                  mod1low.mod2high <- paste(substr(moderator[1],start = 1, stop = 4)," low","; ",substr(moderator[2],start = 1, stop = 4)," high",sep="")
-                  mod1high.mod2low <- paste(substr(moderator[1],start = 1, stop = 4)," high","; ",substr(moderator[2],start = 1, stop = 4)," low",sep="")
-                  mod1low.mod2low  <- paste(substr(moderator[1],start = 1, stop = 4)," low","; ",substr(moderator[2],start = 1, stop = 4)," low",sep="")
-                }
-
-
-                if(y.lab == "auto"){
-                        y.lab <- outcome
-                }
-                if(x.lab == "auto"){
-                        x.lab <- predictor
-                }
-                if(title == "auto"){
-                        if(length(moderator) == 1){
-
-                title<- paste(predictor, "*", moderator, " predicting ",outcome, sep="")
-                        }else{
-                                title<- paste(predictor, "*", moderator[1],"*",moderator[2], " predicting ",outcome, sep="")
-                        }
-                }
-
-                if(length(moderator) == 1) {
-                if(legend.name == "auto"){
-                legend.name<- moderator
-                  }
-                  }
-
-                if(length(moderator) == 2) {
-                if(legend.name == "auto"){
-                  legend.name<- " "
-                  }
-                  }
-
-        temp.plot <- temp.plot +
-
-          scale_x_continuous(limits = x.lim) +
-          scale_y_continuous(limits = y.lim) +
-          labs(x = x.lab, y = y.lab)+
-          scale_size_continuous(name=moderator, guide = "none") +
-          ggtitle(title)+ theme_classic() +
-          theme(plot.title = element_text(size = title.size, face = "bold"))
-
-
-        ###add lines for 2 way interaction
-        if(length(moderator) == 1){
-
-        temp.plot<-temp.plot +
-          geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) + as.numeric(INT$coefficients[2]*SDs)),
-                                    slope=(as.numeric(INT$coefficients[3]) + as.numeric(INT$coefficients[4]*SDs)),
-                                    linetype= positive), size = 1)+
-          geom_abline(aes(intercept=as.numeric(INT$coefficients[1]),
-                          slope=as.numeric(INT$coefficients[3]),
-                          linetype= "Mean"), size = 1)+
-          geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) - as.numeric(INT$coefficients[2]*SDs)),
-                          slope=(as.numeric(INT$coefficients[3])-as.numeric(INT$coefficients[4]*SDs)),
-                          linetype= negative),size = 1)+
-          scale_linetype_manual(values = c("dashed","solid","dotted"),
-                                breaks =c(positive, "Mean", negative),
-                                name = legend.name)
-        }
-        ###add lines for 3 way interaction
-        if(length(moderator) == 2){
-
-          temp.plot<-temp.plot + scale_linetype_manual(legend.name,
-                                                      values = c("mod1high.mod2high" = "solid", "mod1high.mod2low" = "twodash","mod1low.mod2high" = "dashed", "mod1low.mod2low" = "dotted"),
-                                                      labels = c(mod1high.mod2high,mod1high.mod2low,mod1low.mod2high,mod1low.mod2low)) +
-
-            #mod1high,mod2high
-            geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) + as.numeric(INT$coefficients[2]*SDs) + as.numeric(INT$coefficients[3]*SDs) + as.numeric(INT$coefficients[5]*SDs*SDs)),
-                            slope=(as.numeric(INT$coefficients[4]) + as.numeric(INT$coefficients[6]*SDs) + as.numeric(INT$coefficients[7]*SDs) + as.numeric(INT$coefficients[8]*SDs*SDs)),
-                            linetype= "mod1high.mod2high"), size = 1) +
-            ##doling this one
-            #mod1low.mod2high
-            geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) - as.numeric(INT$coefficients[2]*SDs) + as.numeric(INT$coefficients[3]*SDs) - as.numeric(INT$coefficients[5]*SDs*SDs)),
-                            slope=(as.numeric(INT$coefficients[4]) - as.numeric(INT$coefficients[6]*SDs) + as.numeric(INT$coefficients[7]*SDs) - as.numeric(INT$coefficients[8]*SDs*SDs)),
-                            linetype= "mod1low.mod2high"), size = 1) +
-
-            #mod1high.mod2low
-            geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) + as.numeric(INT$coefficients[2]*SDs) - as.numeric(INT$coefficients[3]*SDs) - as.numeric(INT$coefficients[5]*SDs*SDs)),
-                            slope=(as.numeric(INT$coefficients[4]) + as.numeric(INT$coefficients[6]*SDs) - as.numeric(INT$coefficients[7]*SDs) - as.numeric(INT$coefficients[8]*SDs*SDs)),
-                            linetype= "mod1high.mod2low"), size = 1) +
-
-            #mod1low.mod2low
-            geom_abline(aes(intercept=(as.numeric(INT$coefficients[1]) - as.numeric(INT$coefficients[2]*SDs) - as.numeric(INT$coefficients[3]*SDs) + as.numeric(INT$coefficients[5]*SDs*SDs)),
-                            slope=(as.numeric(INT$coefficients[4]) - as.numeric(INT$coefficients[6]*SDs) - as.numeric(INT$coefficients[7]*SDs) + as.numeric(INT$coefficients[8]*SDs*SDs)),
-                            linetype= "mod1low.mod2low" ), size = 1 )
-
-        }
-
-        if(save == T){
-          save<- paste(outcome,"~",predictor,"x",moderator[1],".png", sep ="")
-          if(path == "desktop"){
-          username<-Sys.getenv("USERNAME")
-          path <- paste("C:/Users/",username,"/Desktop/",sep = "")
-          }
-          ggsave(save, path = path,
-                 height = 11, width = 13.5, units = "cm", dpi = 600)
-          message("plot saved:")
-          message(path)
-        }
-
-        return(list(plot = temp.plot, summary = summary(INT)))
+  if (title == "auto") title <- paste(paste(c(predictor, moderator), collapse = " * "), "predicting", outcome)
+  if (legend.name == "auto") legend.name <- paste(moderator, collapse = "; ")
+  p <- p + ggplot2::geom_line(ggplot2::aes(xvalue, yvalue, linetype = group), data = lines) +
+    ggplot2::coord_cartesian(xlim = x.lim, ylim = y.lim) + ggplot2::theme_classic() +
+    ggplot2::theme(plot.title = ggplot2::element_text(size = title.size, face = "bold")) +
+    ggplot2::labs(x = if (x.lab == "auto") predictor else x.lab,
+                  y = if (y.lab == "auto") outcome else y.lab, title = title, linetype = legend.name)
+  # The default discrete linetype palette drops groups beyond six. Use colour
+  # for larger grids so every prediction curve remains visible.
+  if (nlevels(lines$group) > 6L)
+    p <- p + ggplot2::scale_linetype_manual(values = rep("solid", nlevels(lines$group)), guide = "none") +
+      ggplot2::aes(colour = group) + ggplot2::labs(colour = legend.name)
+  result <- list(plot = p, summary = model_summary)
+  if (from_fit) result$predictions <- fitted_grid$grid
+  result
 }
-################################################################################
+
+interaction_predictions <- function(fit, predictor, moderator, grid, xlim, sds) {
+  auto <- inherits(fit, "autoModel")
+  vars <- if (auto) fit$predictors else all.vars(stats::delete.response(stats::terms(fit)))
+  check_names(c(predictor, moderator), vars)
+  if (is.null(grid)) {
+    frame <- if (auto) fit$prototype else stats::model.frame(fit)
+    if (!all(vars %in% names(frame)))
+      stop("Supply a raw newdata grid for transformed formula terms.")
+    values <- lapply(vars, function(nm) {
+      z <- frame[[nm]]
+      if (is.factor(z) || is.character(z)) {
+        if (nm == predictor) stop("The plotted predictor must be numeric.")
+        lev <- if (is.factor(z)) levels(z) else unique(z)
+        if (!nm %in% moderator) lev <- lev[1L]
+        return(factor(lev, levels = if (is.factor(z)) levels(z) else lev, ordered = is.ordered(z)))
+      }
+      if (!is.numeric(z) || !is.null(dim(z))) stop("Supply an explicit newdata grid.")
+      center <- if (auto) fit$transforms[[1]][nm, "center"] else mean(z)
+      spread <- if (auto) fit$transforms[[1]][nm, "scale"] else stats::sd(z)
+      if (nm == predictor) {
+        lim <- if (is.null(xlim)) center + c(-1, 1) * spread else xlim
+        return(seq(lim[1], lim[2], length.out = 101L))
+      }
+      if (!nm %in% moderator) return(center)
+      signs <- if (length(moderator) == 1L) -1:1 else c(-1, 1)
+      center + signs * sds * spread
+    })
+    names(values) <- vars
+    grid <- expand.grid(values, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+  }
+  grid <- select_frames(data_frames(grid), vars)
+  if (length(grid) != 1L) stop("Supply a single raw plotting grid.")
+  grid <- grid[[1]]
+  if (!is.numeric(grid[[predictor]])) stop("The plotted predictor must be numeric.")
+  prediction <- if (auto) stats::predict(fit, grid) else
+    stats::predict(fit, newdata = grid, type = "response")
+  group <- do.call(interaction, c(unname(as.list(grid[moderator])), list(drop = TRUE, sep = "; ")))
+  lines <- data.frame(xvalue = grid[[predictor]], yvalue = as.numeric(prediction), group = group)
+  grid$.prediction <- as.numeric(prediction)
+  list(lines = lines, grid = grid)
+}

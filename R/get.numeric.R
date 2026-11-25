@@ -1,24 +1,22 @@
-#' get.numeric
+#' Keep numeric columns
 #'
-#' Takes in a data.frame or imputationList, removes non-numeric columns, and returns the object.
-#' @param x a data.frame or 'imputationList'
-#' @return Returns the original object with all non-numeric columns removed.
-#' @export get.numeric
-#' @importFrom mitools imputationList
+#' Remove non-numeric columns from a data frame or from each completed
+#' data set. A single numeric column is kept as a data frame, not a vector.
+#'
+#' @param x A data frame, imputation list, or Amelia object.
+#' @return A data frame for ordinary input, or an imputation list for
+#'   imputed input. For imputed input, the retained column names and
+#'   their order must agree across completed data sets.
+#' @seealso \code{\link{ctrx}}
+#' @examples
+#' get.numeric(iris)
+#' @export
 
-get.numeric = function(x) {
-        if (!any(c("imputationList", "amelia") %in% class(x))) {
-                cols = unlist(lapply(x, is.numeric))
-                return(x[, cols])
-        } else{
-                if (!"imputationList" %in% class(x)) {
-                        x = imputationList(x$imputations)
-                }
-                imps = lapply(x$imputations, function(y) {
-                        cols = unlist(lapply(y, is.numeric))
-                        return(y[, cols])
-                })
-                return(imputationList(imps))
-
-        }
+get.numeric <- function(x) {
+  keep <- function(d) d[, vapply(d, is.numeric, logical(1)), drop = FALSE]
+  if (!is_imputed(x)) return(keep(x))
+  frames <- lapply(data_frames(x), keep)
+  if (!all(vapply(frames, function(d) identical(names(d), names(frames[[1]])), logical(1))))
+    stop("Numeric columns differ across imputations.", call. = FALSE)
+  mitools::imputationList(frames)
 }

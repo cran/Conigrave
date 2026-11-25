@@ -2,55 +2,102 @@
 % Please edit documentation in R/Interaction.plot.R
 \name{int.plot}
 \alias{int.plot}
-\title{Interaction plot}
+\title{Plot a two-way or three-way interaction}
 \usage{
-int.plot(data, outcome, predictor, moderator, y.lim = c(-1, 1),
-  x.lim = c(-1, 1), x.lab = "auto", y.lab = "auto", title = "auto",
-  title.size = 15, SDs = 1, legend.name = "auto",
-  colour = "ghostwhite", show.points = FALSE, save = F,
-  path = getwd())
+int.plot(
+  data,
+  outcome,
+  predictor,
+  moderator,
+  y.lim = c(-1, 1),
+  x.lim = c(-1, 1),
+  x.lab = "auto",
+  y.lab = "auto",
+  title = "auto",
+  title.size = 15,
+  SDs = 1,
+  legend.name = "auto",
+  colour = "ghostwhite",
+  show.points = FALSE,
+  newdata = NULL
+)
 }
 \arguments{
-\item{data}{an object of class 'data.frame' or 'imputationList'.}
+\item{data}{A data frame, completed data sets in an imputation list or
+Amelia object, or a fitted \code{autoModel}, \code{lm}, or \code{glm}.}
 
-\item{outcome}{a string with the name of the outcome variable.}
+\item{outcome}{Name of the response column. Required when supplying data.
+Inferred from the fitted model if omitted.}
 
-\item{predictor}{a string with the name of the predictor variable.}
+\item{predictor}{Name of the numeric predictor on the horizontal axis.}
 
-\item{moderator}{a vector of the names of up to two moderating variables.}
+\item{moderator}{One or two moderator names. With raw data, moderators
+must be numeric. With an existing fit, they can also be categorical.}
 
-\item{y.lim}{vector of numerals indicating y axis bounds.}
+\item{y.lim}{Vertical axis limits. Defaults to \code{c(-1, 1)} for
+the standardized data mode and is inferred from predictions for fits.}
 
-\item{x.lim}{vector of numerals indicating x axis bounds.}
+\item{x.lim}{Horizontal axis limits. Defaults to \code{c(-1, 1)} for
+the standardized data mode. With a fit and no \code{newdata}, supplied
+limits also determine the range of the prediction grid.}
 
-\item{x.lab}{a string with the label of the x axis.}
+\item{x.lab, y.lab}{Axis labels. Use \code{"auto"} for the variable names.}
 
-\item{y.lab}{a string with the label of the y axis.}
+\item{title}{Plot title. Use \code{"auto"} for a title based on the variables.}
 
-\item{title}{a string containing title text.}
+\item{title.size}{Plot title size.}
 
-\item{title.size}{a numeral containing the font size of the title.}
+\item{SDs}{Number of standard deviations below and above the mean at
+which to draw lines for numeric moderators when no grid is supplied.}
 
-\item{SDs}{a numeral indicating the standard deviations of the moderators.}
+\item{legend.name}{Legend title. Use \code{"auto"} for the moderator names.}
 
-\item{legend.name}{a character string indicating the title of the legend.}
+\item{colour}{High end of the colour gradient for observed points.}
 
-\item{colour}{a character string containing the colour of the data points.}
+\item{show.points}{If \code{TRUE}, add observed points from the first
+completed data set. Only supported when supplying data rather than a fit.}
 
-\item{show.points}{logical to determine whether or not to include points.}
-
-\item{save}{logical as to whether or not to save the plot.}
-
-\item{path}{string containing path of where to save plot. Defaults to working directory.}
+\item{newdata}{Optional prediction grid for an existing fit. Supply
+one row per prediction and all required predictors on their input scales.
+A grid is useful for transformed formulas or custom covariate values.}
 }
 \value{
-A ggplot
+A list with \code{plot} (a ggplot) and \code{summary} (the model
+  summary). When supplying a fit, \code{predictions} contains the
+  plotting grid with an added \code{.prediction} column.
 }
 \description{
-Calculates a standardized two way or three way interaction and plots using ggplot2.
+Fit a standardized linear interaction from data, or plot predictions
+from an existing model without refitting it.
+}
+\details{
+With data, \code{int.plot()} standardizes the outcome, predictor,
+  and moderators within each completed data set before fitting a linear
+  interaction. Both axes are in standard-deviation units.
+
+With a fit, the axes use the predictor input scale and model response
+scale. For an \code{autoModel}, the function uses the stored training
+transformations, so supply raw predictor values. Without an explicit
+grid, the numeric predictor ranges from one SD below to one SD above
+its mean (unless \code{x.lim} is supplied). Lines use numeric moderator
+values at the mean plus or minus \code{SDs} standard deviations; with one
+numeric moderator, a line is also drawn at its mean. Categorical
+moderators use all levels. Other predictors are held at their mean or
+first level. For imputed fits, these defaults come from the first completed
+data set, and plotted predictions are averaged across fits.
+
+An existing model is used as-is. The plot does not add an interaction term
+or test whether an interaction is present.
+
+To save a figure, pass the returned plot to
+\code{ggplot2::ggsave("interaction.png", plot = result$plot)}.
 }
 \examples{
-carsdata<-mtcars
-int.plot(carsdata,"mpg","disp","cyl", y.lim = c(-2.5,2.5))
-int.plot(carsdata,"mpg","disp", c("cyl","am"), y.lim = c(-5.0,2.0))
+int.plot(mtcars, "mpg", "disp", "cyl", y.lim = c(-2.5, 2.5))$plot
+
+fit <- glm(am ~ wt * hp, data = mtcars, family = binomial())
+int.plot(fit, predictor = "wt", moderator = "hp")$plot
+}
+\seealso{
+\code{\link{autoModel}}, \code{\link{predict.autoModel}}
 }
